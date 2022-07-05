@@ -13,7 +13,7 @@ Post.init(
             primaryKey: true,
             autoIncrement: true
         },
-        titel: {
+        title: {
             type: DataTypes.STRING,
             allowNull: false
         },
