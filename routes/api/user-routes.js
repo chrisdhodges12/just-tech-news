@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { User } = require("../../models");
+const { User, Post, Vote } = require("../../models");
 
 // get all users
 router.get("/", (req, res) => {
@@ -20,6 +20,18 @@ router.get("/:id", (req, res) => {
     where: {
       id: req.params.id,
     },
+    include: [
+      {
+        model: Post,
+        attributes: ["id", "title", "post_url", "created_at"],
+      },
+      {
+        model: Post,
+        attributes: ["title"],
+        through: Vote,
+        as: "voted_posts",
+      }
+    ]
   })
     .then((dbUserData) => {
       if (!dbUserData) {
@@ -50,40 +62,38 @@ router.post("/", (req, res) => {
 });
 
 //verify user login
-router.post('/login', (req, res) => {
-//expects {email, password}
-User.findOne({
+router.post("/login", (req, res) => {
+  //expects {email, password}
+  User.findOne({
     where: {
-        email: req.body.email
-    }
-}).then(dbUserData => {
+      email: req.body.email,
+    },
+  }).then((dbUserData) => {
     if (!dbUserData) {
-        res.status(400).json({ message: 'No user with that email address!' });
-        return;
+      res.status(400).json({ message: "No user with that email address!" });
+      return;
     }
 
     //verify user
     const validPassword = dbUserData.checkPassword(req.body.password);
     if (!validPassword) {
-        res.status(400).json({ message: 'Incorrect password!' });
-        return;
+      res.status(400).json({ message: "Incorrect password!" });
+      return;
     }
 
-    res.json({ user: dbUserData, message: 'You are now logged in!' });
+    res.json({ user: dbUserData, message: "You are now logged in!" });
+  });
 });
-
-});
-
 
 //updates user data
 router.put("/:id", (req, res) => {
   // expects {username: 'Lernantino', email: 'lernantino@gmail.com', password: 'password1234'}
   // pass in req.body instead to only update what's passed through
   User.update(req.body, {
-      individualHooks: true,
+    individualHooks: true,
     where: {
-      id: req.params.id
-    }
+      id: req.params.id,
+    },
   })
     .then((dbUserData) => {
       if (!dbUserData[0]) {
